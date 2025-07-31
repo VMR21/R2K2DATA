@@ -71,11 +71,16 @@ app.get("/leaderboard/top14", (req, res) => {
 app.get("/leaderboard/prev", async (req, res) => {
   try {
     const now = new Date();
-    const prevMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
-    const prevMonthEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0));
+    const currentStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (now.getUTCDate() < 23 ? 1 : 0), 23));
+    
+    const prevStart = new Date(currentStart);
+    prevStart.setUTCMonth(prevStart.getUTCMonth() - 1);
+    const prevEnd = new Date(currentStart);
+    prevEnd.setUTCDate(22);
+    prevEnd.setUTCMonth(prevEnd.getUTCMonth() - 0);
 
-    const startStr = prevMonth.toISOString().slice(0, 10);
-    const endStr = prevMonthEnd.toISOString().slice(0, 10);
+    const startStr = prevStart.toISOString().slice(0, 10);
+    const endStr = prevEnd.toISOString().slice(0, 10);
 
     const url = `https://services.rainbet.com/v1/external/affiliates?start_at=${startStr}&end_at=${endStr}&key=${API_KEY}`;
     const response = await fetch(url);
@@ -88,7 +93,7 @@ app.get("/leaderboard/prev", async (req, res) => {
     );
 
     const top10 = sorted.slice(0, 10);
-    if (top10.length >= 2) [top10[0], top10[1]] = [top10[1], top10[0]]; // 🟢 SWAP top 2
+    if (top10.length >= 2) [top10[0], top10[1]] = [top10[1], top10[0]];
 
     const processed = top10.map(entry => ({
       username: maskUsername(entry.username),
@@ -102,6 +107,7 @@ app.get("/leaderboard/prev", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch previous leaderboard data." });
   }
 });
+
 
 
 setInterval(() => {
